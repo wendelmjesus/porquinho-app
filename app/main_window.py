@@ -1,18 +1,25 @@
 import os
 import sys
-from datetime import date
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QDate, Qt, QTimer
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
+    QDateEdit,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
     QMainWindow,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -24,43 +31,54 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.is_compact_layout = None
         self.setWindowTitle("Porquinho")
         self.resize(1200,760)
+        self.setMinimumSize(360, 640)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        self.main_layout = QHBoxLayout(central_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
 
         self.pages = QStackedWidget()
         self.menu_buttons = []
+        self.sidebar_labels = []
         self.transactions = []
         self.next_transaction_id = 1
 
-        self.dashboard_page = self.create_content()
+        self.dashboard_page = self.create_scroll_page(self.create_content())
 
-        self.transactions_page = self.create_transactions_page()
+        self.transactions_page = self.create_scroll_page(self.create_transactions_page())
 
-        self.categories_page = self.create_simple_page(
-            "Categorias", 
-            "Organize suas transações em categorias."
+        self.categories_page = self.create_scroll_page(
+            self.create_simple_page(
+                "Categorias",
+                "Organize suas transações em categorias."
+            )
         )
 
-        self.goals_page = self.create_simple_page(
-            "Metas", 
-            "Defina metas financeiras e acompanhe seu progresso."
+        self.goals_page = self.create_scroll_page(
+            self.create_simple_page(
+                "Metas",
+                "Defina metas financeiras e acompanhe seu progresso."
+            )
         )
 
-        self.reports_page = self.create_simple_page(
-            "Relatórios", 
-            "Visualize e exporte seus relatórios detalhados sobre suas finanças."
+        self.reports_page = self.create_scroll_page(
+            self.create_simple_page(
+                "Relatórios",
+                "Visualize e exporte seus relatórios detalhados sobre suas finanças."
+            )
         )
 
-        self.settings_page = self.create_simple_page(
-            "Configurações", 
-            "Personalize sua experiência."
+        self.settings_page = self.create_scroll_page(
+            self.create_simple_page(
+                "Configurações",
+                "Personalize sua experiência."
+            )
         )
 
         self.pages.addWidget(self.dashboard_page)
@@ -70,10 +88,153 @@ class MainWindow(QMainWindow):
         self.pages.addWidget(self.reports_page)
         self.pages.addWidget(self.settings_page)
 
-        sidebar = self.create_sidebar()
+        self.sidebar = self.create_sidebar()
 
-        main_layout.addWidget(sidebar)
-        main_layout.addWidget(self.pages, 1)
+        self.main_layout.addWidget(self.sidebar)
+        self.main_layout.addWidget(self.pages, 1)
+        self.update_responsive_layout()
+
+    def create_scroll_page(self, page):
+        scroll_area = QScrollArea()
+        scroll_area.setObjectName("pageScrollArea")
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setWidget(page)
+
+        return scroll_area
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.update_responsive_layout()
+
+    def update_responsive_layout(self):
+        if not hasattr(self, "sidebar"):
+            return
+
+        compact_layout = self.width() < 760
+
+        if compact_layout != self.is_compact_layout:
+            self.is_compact_layout = compact_layout
+
+            if compact_layout:
+                self.sidebar.setFixedWidth(92)
+                self.sidebar.layout().setContentsMargins(12, 20, 12, 20)
+
+                for button, full_text, compact_text in self.sidebar_labels:
+                    button.setText(compact_text)
+            else:
+                self.sidebar.setFixedWidth(250)
+                self.sidebar.layout().setContentsMargins(22, 28, 22, 24)
+
+                for button, full_text, compact_text in self.sidebar_labels:
+                    button.setText(full_text)
+
+        self.update_cards_layout()
+        self.update_dashboard_panels_layout()
+        self.update_transactions_layout()
+
+    def clear_layout(self, layout):
+        while layout.count():
+            layout.takeAt(0)
+
+    def update_cards_layout(self):
+        if not hasattr(self, "cards_layout"):
+            return
+
+        compact_layout = self.width() < 900
+        self.clear_layout(self.cards_layout)
+
+        for index, card in enumerate(self.finance_cards):
+            if compact_layout:
+                self.cards_layout.addWidget(card, index, 0)
+            else:
+                self.cards_layout.addWidget(card, 0, index)
+
+        self.cards_layout.setColumnStretch(0, 1)
+        self.cards_layout.setColumnStretch(1, 1 if not compact_layout else 0)
+        self.cards_layout.setColumnStretch(2, 1 if not compact_layout else 0)
+
+    def update_dashboard_panels_layout(self):
+        if not hasattr(self, "dashboard_bottom_layout"):
+            return
+
+        compact_layout = self.width() < 980
+        self.clear_layout(self.dashboard_bottom_layout)
+
+        if compact_layout:
+            self.dashboard_bottom_layout.addWidget(self.dashboard_panels[0], 0, 0)
+            self.dashboard_bottom_layout.addWidget(self.dashboard_panels[1], 1, 0)
+            self.dashboard_bottom_layout.setColumnStretch(0, 1)
+            return
+
+        self.dashboard_bottom_layout.addWidget(self.dashboard_panels[0], 0, 0)
+        self.dashboard_bottom_layout.addWidget(self.dashboard_panels[1], 0, 1)
+        self.dashboard_bottom_layout.setColumnStretch(0, 2)
+        self.dashboard_bottom_layout.setColumnStretch(1, 1)
+
+    def update_transactions_layout(self):
+        if not hasattr(self, "transaction_filters_layout"):
+            return
+
+        compact_layout = self.width() < 760
+        medium_layout = self.width() < 1040
+
+        self.transaction_content_layout.setContentsMargins(
+            18 if compact_layout else 40,
+            24 if compact_layout else 35,
+            18 if compact_layout else 40,
+            24 if compact_layout else 35,
+        )
+
+        self.clear_layout(self.transaction_header_layout)
+
+        if compact_layout:
+            self.transaction_header_layout.addLayout(self.transaction_title_layout, 0, 0)
+            self.transaction_header_layout.addWidget(self.new_transaction_button, 1, 0)
+            self.transaction_header_layout.setColumnStretch(0, 1)
+            self.transaction_header_layout.setColumnStretch(1, 0)
+        else:
+            self.transaction_header_layout.addLayout(self.transaction_title_layout, 0, 0)
+            self.transaction_header_layout.addWidget(self.new_transaction_button, 0, 1)
+            self.transaction_header_layout.setColumnStretch(0, 1)
+            self.transaction_header_layout.setColumnStretch(1, 0)
+
+        self.clear_layout(self.transaction_filters_layout)
+
+        if compact_layout:
+            self.transaction_filters_layout.addWidget(self.transaction_search_input, 0, 0)
+            self.transaction_filters_layout.addWidget(self.transaction_type_filter, 1, 0)
+            self.transaction_filters_layout.addWidget(self.transaction_category_filter, 2, 0)
+            self.transaction_filters_layout.addWidget(self.clear_filters_button, 3, 0)
+            self.transaction_filters_layout.addWidget(self.remove_transaction_button, 4, 0)
+            self.transaction_filters_layout.addWidget(self.transaction_results_label, 5, 0)
+            self.transaction_filters_layout.setColumnStretch(0, 1)
+        elif medium_layout:
+            self.transaction_filters_layout.addWidget(self.transaction_search_input, 0, 0, 1, 2)
+            self.transaction_filters_layout.addWidget(self.transaction_type_filter, 1, 0)
+            self.transaction_filters_layout.addWidget(self.transaction_category_filter, 1, 1)
+            self.transaction_filters_layout.addWidget(self.clear_filters_button, 2, 0)
+            self.transaction_filters_layout.addWidget(self.remove_transaction_button, 2, 1)
+            self.transaction_filters_layout.addWidget(self.transaction_results_label, 3, 0, 1, 2)
+            self.transaction_filters_layout.setColumnStretch(0, 1)
+            self.transaction_filters_layout.setColumnStretch(1, 1)
+        else:
+            self.transaction_filters_layout.addWidget(self.transaction_search_input, 0, 0, 1, 2)
+            self.transaction_filters_layout.addWidget(self.transaction_type_filter, 0, 2)
+            self.transaction_filters_layout.addWidget(self.transaction_category_filter, 0, 3)
+            self.transaction_filters_layout.addWidget(self.clear_filters_button, 1, 0)
+            self.transaction_filters_layout.addWidget(self.remove_transaction_button, 1, 1)
+            self.transaction_filters_layout.addWidget(self.transaction_results_label, 1, 3)
+            self.transaction_filters_layout.setColumnStretch(0, 2)
+            self.transaction_filters_layout.setColumnStretch(1, 1)
+            self.transaction_filters_layout.setColumnStretch(2, 1)
+            self.transaction_filters_layout.setColumnStretch(3, 1)
+
+        if hasattr(self, "transactions_table"):
+            self.transactions_table.setColumnHidden(1, compact_layout)
+            self.transactions_table.setColumnHidden(3, compact_layout)
 
     def create_sidebar(self):
         sidebar = QFrame()
@@ -103,14 +264,14 @@ class MainWindow(QMainWindow):
         layout.addSpacing(20)
 
         buttons = [
-            ("Dashboard", 0),
-            ("Transações", 1),
-            ("Categorias", 2),
-            ("Metas", 3),
-            ("Relatórios", 4)
+            ("Dashboard", "Dash", 0),
+            ("Transações", "Trans.", 1),
+            ("Categorias", "Cat.", 2),
+            ("Metas", "Metas", 3),
+            ("Relatórios", "Relat.", 4)
         ]
 
-        for button_name, page_index in buttons:
+        for button_name, compact_name, page_index in buttons:
             button = QPushButton(button_name)
 
             button.setObjectName("menuButton")
@@ -125,6 +286,7 @@ class MainWindow(QMainWindow):
             )
 
             self.menu_buttons.append(button)
+            self.sidebar_labels.append((button, button_name, compact_name))
 
             layout.addWidget(button)
 
@@ -149,6 +311,7 @@ class MainWindow(QMainWindow):
             self.change_page(5, btn)
         )
         self.menu_buttons.append(settings_button)
+        self.sidebar_labels.append((settings_button, "Configurações", "Config."))
 
         layout.addWidget(restart_button)
         layout.addWidget(settings_button)
@@ -168,11 +331,13 @@ class MainWindow(QMainWindow):
 
         title = QLabel(title_text)
         title.setObjectName("pageTitle")
-        title.setFixedHeight(40)
+        title.setMinimumHeight(40)
+        title.setWordWrap(True)
 
         subtitle = QLabel(subtitle_text)
         subtitle.setObjectName("pageSubtitle")
-        subtitle.setFixedHeight(24)
+        subtitle.setMinimumHeight(24)
+        subtitle.setWordWrap(True)
 
         layout.addWidget(title)
         layout.addWidget(subtitle)
@@ -200,19 +365,22 @@ class MainWindow(QMainWindow):
 
         title = QLabel("Dashboard")
         title.setObjectName("pageTitle")
-        title.setFixedHeight(40)
+        title.setMinimumHeight(40)
+        title.setWordWrap(True)
 
         subtitle = QLabel("Acompanhe sua vida financeira.")
         subtitle.setObjectName("pageSubtitle")
-        subtitle.setFixedHeight(24)
+        subtitle.setMinimumHeight(24)
+        subtitle.setWordWrap(True)
 
         layout.addWidget(title)
         layout.addWidget(subtitle)
 
         layout.addSpacing(30)
 
-        cards_layout = QHBoxLayout()
-        cards_layout.setSpacing(18)
+        self.cards_layout = QGridLayout()
+        self.cards_layout.setHorizontalSpacing(18)
+        self.cards_layout.setVerticalSpacing(18)
 
         balance_card = self.create_finance_card(
             "Saldo", 
@@ -232,24 +400,31 @@ class MainWindow(QMainWindow):
             "expenseCard"
         )
 
-        cards_layout.addWidget(balance_card)
-        cards_layout.addWidget(income_card)
-        cards_layout.addWidget(expense_card)
+        self.finance_cards = [
+            balance_card,
+            income_card,
+            expense_card,
+        ]
+        self.update_cards_layout()
 
-        layout.addLayout(cards_layout)
+        layout.addLayout(self.cards_layout)
 
         layout.addSpacing(30)
 
-        bottom_layout = QHBoxLayout()
-        bottom_layout.setSpacing(18)
+        self.dashboard_bottom_layout = QGridLayout()
+        self.dashboard_bottom_layout.setHorizontalSpacing(18)
+        self.dashboard_bottom_layout.setVerticalSpacing(18)
 
         chart_panel = self.create_chart_panel()
         transactions_panel = self.create_transactions_panel()
 
-        bottom_layout.addWidget(chart_panel, 2)
-        bottom_layout.addWidget(transactions_panel, 1)
+        self.dashboard_panels = [
+            chart_panel,
+            transactions_panel,
+        ]
+        self.update_dashboard_panels_layout()
 
-        layout.addLayout(bottom_layout)
+        layout.addLayout(self.dashboard_bottom_layout)
 
         layout.addStretch()
 
@@ -260,6 +435,10 @@ class MainWindow(QMainWindow):
         card.setObjectName(object_name)
         card.setMinimumWidth(150)
         card.setFixedHeight(132)
+        card.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
 
         layout = QVBoxLayout(card)
         layout.setContentsMargins(20, 16, 20, 16)
@@ -346,21 +525,28 @@ class MainWindow(QMainWindow):
         page.setObjectName("content")
 
         layout = QVBoxLayout(page)
+        self.transaction_content_layout = layout
         layout.setContentsMargins(40, 35, 40, 35)
         layout.setSpacing(0)
 
-        header_layout = QHBoxLayout()
+        header_layout = QGridLayout()
+        self.transaction_header_layout = header_layout
+        header_layout.setHorizontalSpacing(12)
+        header_layout.setVerticalSpacing(12)
 
         title_container = QVBoxLayout()
+        self.transaction_title_layout = title_container
         title_container.setSpacing(0)
 
         title = QLabel("Transações")
         title.setObjectName("pageTitle")
-        title.setFixedHeight(40)
+        title.setMinimumHeight(40)
+        title.setWordWrap(True)
 
         subtitle = QLabel("Gerencie suas receitas e despesas.")
         subtitle.setObjectName("pageSubtitle")
-        subtitle.setFixedHeight(24)
+        subtitle.setMinimumHeight(24)
+        subtitle.setWordWrap(True)
 
         title_container.addWidget(title)
         title_container.addWidget(subtitle)
@@ -369,11 +555,12 @@ class MainWindow(QMainWindow):
         new_transaction_button.setObjectName("primaryButton")
         new_transaction_button.setFixedHeight(42)
         new_transaction_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        new_transaction_button.clicked.connect(self.add_demo_transaction)
+        new_transaction_button.clicked.connect(self.open_new_transaction_dialog)
+        self.new_transaction_button = new_transaction_button
 
-        header_layout.addLayout(title_container)
-        header_layout.addStretch()
-        header_layout.addWidget(new_transaction_button)
+        header_layout.addLayout(title_container, 0, 0)
+        header_layout.addWidget(new_transaction_button, 0, 1)
+        header_layout.setColumnStretch(0, 1)
 
         layout.addLayout(header_layout)
 
@@ -382,14 +569,16 @@ class MainWindow(QMainWindow):
         filters_frame = QFrame()
         filters_frame.setObjectName("filtersFrame")
 
-        filters_layout = QHBoxLayout(filters_frame)
+        filters_layout = QGridLayout(filters_frame)
+        self.transaction_filters_layout = filters_layout
         filters_layout.setContentsMargins(18, 14, 18, 14)
-        filters_layout.setSpacing(12)
+        filters_layout.setHorizontalSpacing(12)
+        filters_layout.setVerticalSpacing(12)
 
         search_input = QLineEdit()
         search_input.setObjectName("searchInput")
         search_input.setPlaceholderText("Buscar transação...")
-        search_input.setMinimumWidth(250)
+        search_input.setMinimumWidth(160)
         search_input.setFixedHeight(40)
         search_input.textChanged.connect(self.apply_transaction_filters)
 
@@ -423,6 +612,7 @@ class MainWindow(QMainWindow):
         clear_filters_button.setFixedHeight(40)
         clear_filters_button.setCursor(Qt.CursorShape.PointingHandCursor)
         clear_filters_button.clicked.connect(self.clear_transaction_filters)
+        self.clear_filters_button = clear_filters_button
 
         remove_transaction_button = QPushButton("Remover selecionada")
         remove_transaction_button.setObjectName("dangerButton")
@@ -435,13 +625,16 @@ class MainWindow(QMainWindow):
         results_label.setObjectName("filtersStatus")
         results_label.setFixedHeight(40)
 
-        filters_layout.addWidget(search_input)
-        filters_layout.addWidget(type_filter)
-        filters_layout.addWidget(category_filter)
-        filters_layout.addWidget(clear_filters_button)
-        filters_layout.addWidget(remove_transaction_button)
-        filters_layout.addStretch()
-        filters_layout.addWidget(results_label)
+        filters_layout.addWidget(search_input, 0, 0, 1, 2)
+        filters_layout.addWidget(type_filter, 0, 2)
+        filters_layout.addWidget(category_filter, 0, 3)
+        filters_layout.addWidget(clear_filters_button, 1, 0)
+        filters_layout.addWidget(remove_transaction_button, 1, 1)
+        filters_layout.addWidget(results_label, 1, 3)
+        filters_layout.setColumnStretch(0, 2)
+        filters_layout.setColumnStretch(1, 1)
+        filters_layout.setColumnStretch(2, 1)
+        filters_layout.setColumnStretch(3, 1)
 
         layout.addWidget(filters_frame)
 
@@ -449,6 +642,12 @@ class MainWindow(QMainWindow):
 
         table = QTableWidget()
         table.setObjectName("transactionsTable")
+        table.setMinimumHeight(360)
+        table.setMinimumWidth(0)
+        table.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.transactions_table = table
         self.transaction_search_input = search_input
         self.transaction_type_filter = type_filter
@@ -511,6 +710,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(table)
         self.populate_transactions_table(self.transactions)
         self.update_remove_button_state()
+        self.update_transactions_layout()
 
         return page
 
@@ -520,19 +720,117 @@ class MainWindow(QMainWindow):
         self.transaction_category_filter.setCurrentIndex(0)
         self.apply_transaction_filters()
 
-    def add_demo_transaction(self):
+    def open_new_transaction_dialog(self):
+        self.open_transaction_dialog()
+
+    def open_transaction_dialog(self, default_type="Receita"):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Nova transação")
+        dialog.setObjectName("transactionDialog")
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(22, 22, 22, 22)
+        layout.setSpacing(16)
+
+        form_layout = QFormLayout()
+        form_layout.setSpacing(12)
+
+        description_input = QLineEdit()
+        description_input.setObjectName("searchInput")
+        description_input.setPlaceholderText("Ex: Mercado")
+        description_input.setFixedHeight(40)
+
+        category_input = QComboBox()
+        category_input.setObjectName("filterCombo")
+        category_input.setFixedHeight(40)
+        category_input.addItems([
+            "Alimentação",
+            "Transporte",
+            "Lazer",
+            "Moradia",
+            "Saúde",
+            "Salário",
+            "Outros",
+        ])
+
+        type_input = QComboBox()
+        type_input.setObjectName("filterCombo")
+        type_input.setFixedHeight(40)
+        type_input.addItems(["Receita", "Despesa"])
+        type_input.setCurrentText(default_type)
+
+        date_input = QDateEdit()
+        date_input.setObjectName("dateInput")
+        date_input.setFixedHeight(40)
+        date_input.setCalendarPopup(True)
+        date_input.setDisplayFormat("dd/MM/yyyy")
+        date_input.setDate(QDate.currentDate())
+
+        amount_input = QDoubleSpinBox()
+        amount_input.setObjectName("amountInput")
+        amount_input.setFixedHeight(40)
+        amount_input.setPrefix("R$ ")
+        amount_input.setDecimals(2)
+        amount_input.setMaximum(9999999.99)
+
+        form_layout.addRow("Descrição", description_input)
+        form_layout.addRow("Categoria", category_input)
+        form_layout.addRow("Tipo", type_input)
+        form_layout.addRow("Data", date_input)
+        form_layout.addRow("Valor", amount_input)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Cancel
+            | QDialogButtonBox.StandardButton.Ok
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        layout.addLayout(form_layout)
+        layout.addWidget(buttons)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        description = description_input.text().strip()
+
+        if not description:
+            description = "Sem descrição"
+
+        amount = amount_input.value()
+
+        if type_input.currentText() == "Despesa":
+            amount = -amount
+
+        self.add_transaction(
+            description,
+            category_input.currentText(),
+            type_input.currentText(),
+            date_input.date().toString("dd/MM/yyyy"),
+            amount,
+        )
+
+    def add_expense(self, description, category, transaction_date, amount):
+        self.add_transaction(
+            description,
+            category,
+            "Despesa",
+            transaction_date,
+            -abs(amount),
+        )
+
+    def add_transaction(self, description, category, transaction_type, transaction_date, amount):
         transaction_id = self.next_transaction_id
         self.next_transaction_id += 1
-        amount = 95.00 if transaction_id % 2 == 0 else -35.90
 
         self.transactions.insert(
             0,
             {
                 "id": transaction_id,
-                "description": f"Transação {transaction_id}",
-                "category": "Outros",
-                "type": "Receita" if amount > 0 else "Despesa",
-                "date": date.today().strftime("%d/%m/%Y"),
+                "description": description,
+                "category": category,
+                "type": transaction_type,
+                "date": transaction_date,
                 "amount": amount,
             },
         )

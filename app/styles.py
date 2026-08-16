@@ -1,6 +1,8 @@
 APP_STYLE = """
 QWidget {
     font-family: "Inter", sans-serif;
+    background-color: #FFFFFF;
+    color: #18316F;
 }
 
 QMainWindow {
@@ -14,6 +16,30 @@ QMainWindow {
 
 #content {
     background-color: #ffffff;
+}
+
+#pageScrollArea {
+    background-color: #FFFFFF;
+    border: none;
+}
+
+QScrollBar:vertical,
+QScrollBar:horizontal {
+    background-color: #F7F9FF;
+    border: none;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background-color: #CFDAF7;
+    border-radius: 4px;
+    min-height: 28px;
+    min-width: 28px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background-color: #AFC1F5;
 }
 
 #menuButton {
@@ -242,6 +268,95 @@ QMainWindow {
 #filterCombo::drop-down {
     border: none;
     width: 28px;
+}
+
+#filterCombo QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #18316F;
+
+    border: 1px solid #CFDAF7;
+    selection-background-color: #D4DFFF;
+    selection-color: #1145D6;
+
+    outline: none;
+}
+
+#filterCombo QAbstractItemView::item {
+    min-height: 30px;
+    padding: 6px 10px;
+}
+
+#dateInput,
+#amountInput {
+    background-color: #FFFFFF;
+    color: #18316F;
+
+    border: 1px solid #CFDAF7;
+    border-radius: 8px;
+
+    padding: 0 12px;
+
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#dateInput:focus,
+#amountInput:focus {
+    border-color: #1145D6;
+}
+
+QCalendarWidget QWidget {
+    background-color: #FFFFFF;
+    color: #18316F;
+}
+
+QCalendarWidget QToolButton {
+    background-color: #FFFFFF;
+    color: #1145D6;
+    border: none;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QCalendarWidget QMenu {
+    background-color: #FFFFFF;
+    color: #18316F;
+    border: 1px solid #CFDAF7;
+}
+
+QCalendarWidget QAbstractItemView {
+    background-color: #FFFFFF;
+    color: #18316F;
+    selection-background-color: #D4DFFF;
+    selection-color: #1145D6;
+}
+
+QDialog {
+    background-color: #FFFFFF;
+    color: #18316F;
+}
+
+QDialog QLabel {
+    background-color: #FFFFFF;
+    color: #18316F;
+}
+
+QDialogButtonBox QPushButton {
+    background-color: #FFFFFF;
+    color: #1145D6;
+
+    border: 1px solid #CFDAF7;
+    border-radius: 8px;
+
+    padding: 8px 14px;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QDialogButtonBox QPushButton:hover {
+    background-color: #D4DFFF;
+    border-color: #1145D6;
 }
 
 #filtersStatus {
