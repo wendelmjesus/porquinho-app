@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+
+# Local exports.
+relatorio_financeiro*.csv
+
+# Local app database with user financial data.
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+!data/.gitkeep

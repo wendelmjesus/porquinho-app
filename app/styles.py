@@ -9,6 +9,10 @@ QMainWindow {
     background-color: #ffffff;
 }
 
+QStackedWidget {
+    background-color: #ffffff;
+}
+
 #sidebar {
     background-color: #ffffff;
     border-right: 1px solid #CFDAF7;
@@ -21,6 +25,12 @@ QMainWindow {
 #pageScrollArea {
     background-color: #FFFFFF;
     border: none;
+}
+
+QAbstractScrollArea::viewport,
+QTableWidget,
+QListWidget {
+    background-color: #FFFFFF;
 }
 
 QScrollBar:vertical,
@@ -114,7 +124,7 @@ QScrollBar::handle:horizontal:hover {
 }
 
 #dashboardPanel {
-    background-color: #FFFFFF;
+    background-color: #FDFEFF;
     border: 1px solid #CFDAF7;
     border-radius: 14px;
 }
@@ -142,6 +152,55 @@ QScrollBar::handle:horizontal:hover {
     color: #1145D6;
     font-size: 14px;
     font-weight: 700;
+}
+
+#smallMutedText {
+    color: #5E72A8;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#dashboardRow {
+    background-color: #F7F9FF;
+    border: 1px solid #E8EDFA;
+    border-radius: 8px;
+}
+
+#smallButton {
+    background-color: #FFFFFF;
+    color: #1145D6;
+
+    border: 1px solid #CFDAF7;
+    border-radius: 7px;
+
+    padding: 0 10px;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#smallButton:hover {
+    background-color: #D4DFFF;
+    border-color: #1145D6;
+}
+
+#goalProgressBar {
+    background-color: #E8EDFA;
+    color: #1145D6;
+
+    border: none;
+    border-radius: 4px;
+
+    min-height: 22px;
+
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+#goalProgressBar::chunk {
+    background-color: #1145D6;
+    border-radius: 4px;
 }
 
 #primaryButton {
@@ -380,6 +439,13 @@ QDialogButtonBox QPushButton:hover {
     gridline-color: #E8EDFA;
 }
 
+#transactionsTable QTableViewport,
+#categoriesList QListViewport,
+QAbstractScrollArea,
+QAbstractScrollArea QWidget {
+    background-color: transparent;
+}
+
 #transactionsTable::item {
     padding: 12px;
     border-bottom: 1px solid #E8EDFA;
@@ -413,6 +479,13 @@ QDialogButtonBox QPushButton:hover {
     color: #1145D6;
 }
 
+#settingsCheckBox {
+    background-color: transparent;
+    color: #18316F;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 QHeaderView::section {
     background-color: #F7F9FF;
     color: #5E72A8;
@@ -432,4 +505,190 @@ QTableCornerButton::section {
     border-bottom: 1px solid #CFDAF7;
 }
 
+"""
+
+DARK_APP_STYLE = APP_STYLE + """
+QWidget {
+    background-color: #101624;
+    color: #EAF0FF;
+}
+
+QMainWindow,
+QStackedWidget,
+#content,
+#pageScrollArea,
+QDialog,
+QDialog QLabel {
+    background-color: #101624;
+    color: #EAF0FF;
+}
+
+#sidebar {
+    background-color: #0B1020;
+    border-right: 1px solid #263653;
+}
+
+#menuButton {
+    color: #BFD0FF;
+}
+
+#menuButton:hover,
+#menuButton:checked {
+    background-color: #1B2A46;
+    color: #FFFFFF;
+    border-color: #355386;
+}
+
+#pageTitle,
+#cardValue,
+#transactionValue {
+    color: #8FB2FF;
+}
+
+#pageSubtitle,
+#transactionDescription,
+#smallMutedText {
+    color: #BFD0FF;
+}
+
+#balanceCard,
+#incomeCard,
+#expenseCard,
+#dashboardPanel,
+#filtersFrame,
+#dashboardRow {
+    background-color: #151E31;
+    border-color: #263653;
+}
+
+#balanceCard:hover,
+#incomeCard:hover,
+#expenseCard:hover {
+    background-color: #1B2A46;
+    border-color: #355386;
+}
+
+#cardTitle,
+#filtersStatus {
+    color: #AAB8D8;
+}
+
+#panelTitle {
+    color: #EAF0FF;
+}
+
+#chartPlaceholder,
+#transactionsTable,
+#categoriesList,
+QAbstractScrollArea::viewport,
+QTableWidget,
+QListWidget,
+#searchInput,
+#filterCombo,
+#dateInput,
+#amountInput,
+#goalProgressBar {
+    background-color: #0F1728;
+    color: #EAF0FF;
+    border-color: #263653;
+}
+
+#goalProgressBar::chunk {
+    background-color: #8FB2FF;
+    border-radius: 4px;
+}
+
+#searchInput::placeholder {
+    color: #7D8CAE;
+}
+
+#searchInput:focus,
+#filterCombo:focus,
+#filterCombo:hover,
+#dateInput:focus,
+#amountInput:focus {
+    border-color: #8FB2FF;
+}
+
+#filterCombo QAbstractItemView,
+QCalendarWidget QWidget,
+QCalendarWidget QMenu,
+QCalendarWidget QAbstractItemView {
+    background-color: #0F1728;
+    color: #EAF0FF;
+    border-color: #263653;
+    selection-background-color: #1B2A46;
+    selection-color: #FFFFFF;
+}
+
+QCalendarWidget QToolButton {
+    background-color: #151E31;
+    color: #EAF0FF;
+}
+
+#transactionsTable {
+    alternate-background-color: #151E31;
+    gridline-color: #263653;
+}
+
+#transactionsTable::item,
+#categoriesList::item {
+    border-bottom: 1px solid #263653;
+}
+
+#transactionsTable::item:selected,
+#categoriesList::item:selected {
+    background-color: #243B68;
+    color: #FFFFFF;
+}
+
+QHeaderView::section,
+QTableCornerButton::section {
+    background-color: #151E31;
+    color: #BFD0FF;
+    border-bottom: 1px solid #263653;
+}
+
+#primaryButton {
+    background-color: #5B85FF;
+    color: #FFFFFF;
+}
+
+#primaryButton:hover {
+    background-color: #789BFF;
+}
+
+#primaryButton:pressed {
+    background-color: #416DDB;
+}
+
+#secondaryButton,
+#dangerButton,
+#smallButton,
+QDialogButtonBox QPushButton {
+    background-color: #101624;
+    color: #BFD0FF;
+    border-color: #263653;
+}
+
+#secondaryButton:hover,
+#dangerButton:hover,
+#smallButton:hover,
+QDialogButtonBox QPushButton:hover {
+    background-color: #1B2A46;
+    border-color: #8FB2FF;
+}
+
+#dangerButton:disabled {
+    color: #5E6C89;
+    background-color: #151E31;
+    border-color: #263653;
+}
+
+#settingsCheckBox {
+    background-color: transparent;
+    color: #EAF0FF;
+    font-size: 14px;
+    font-weight: 600;
+}
 """

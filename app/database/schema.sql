@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    UNIQUE(type, name)
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    type TEXT NOT NULL,
+    date TEXT NOT NULL,
+    amount REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS goals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    target REAL NOT NULL,
+    current REAL NOT NULL
+);
