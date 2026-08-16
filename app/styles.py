@@ -390,6 +390,29 @@ QDialogButtonBox QPushButton:hover {
     color: #1145D6;
 }
 
+#categoriesList {
+    background-color: #FFFFFF;
+    color: #18316F;
+
+    border: 1px solid #CFDAF7;
+    border-radius: 8px;
+
+    font-size: 14px;
+
+    outline: none;
+}
+
+#categoriesList::item {
+    min-height: 34px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #E8EDFA;
+}
+
+#categoriesList::item:selected {
+    background-color: #E5ECFF;
+    color: #1145D6;
+}
+
 QHeaderView::section {
     background-color: #F7F9FF;
     color: #5E72A8;

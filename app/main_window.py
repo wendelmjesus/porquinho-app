@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QPushButton,
     QScrollArea,
@@ -48,17 +50,31 @@ class MainWindow(QMainWindow):
         self.sidebar_labels = []
         self.transactions = []
         self.next_transaction_id = 1
+        self.categories = {
+            "Receita": [
+                "Salário",
+                "Freelance",
+                "Investimentos",
+                "Presente",
+                "Outros",
+            ],
+            "Despesa": [
+                "Alimentação",
+                "Transporte",
+                "Moradia",
+                "Saúde",
+                "Educação",
+                "Lazer",
+                "Assinaturas",
+                "Outros",
+            ],
+        }
 
         self.dashboard_page = self.create_scroll_page(self.create_content())
 
         self.transactions_page = self.create_scroll_page(self.create_transactions_page())
 
-        self.categories_page = self.create_scroll_page(
-            self.create_simple_page(
-                "Categorias",
-                "Organize suas transações em categorias."
-            )
-        )
+        self.categories_page = self.create_scroll_page(self.create_categories_page())
 
         self.goals_page = self.create_scroll_page(
             self.create_simple_page(
@@ -134,6 +150,7 @@ class MainWindow(QMainWindow):
         self.update_cards_layout()
         self.update_dashboard_panels_layout()
         self.update_transactions_layout()
+        self.update_categories_layout()
 
     def clear_layout(self, layout):
         while layout.count():
@@ -235,6 +252,32 @@ class MainWindow(QMainWindow):
         if hasattr(self, "transactions_table"):
             self.transactions_table.setColumnHidden(1, compact_layout)
             self.transactions_table.setColumnHidden(3, compact_layout)
+
+    def update_categories_layout(self):
+        if not hasattr(self, "categories_content_layout"):
+            return
+
+        compact_layout = self.width() < 760
+
+        self.categories_content_layout.setContentsMargins(
+            18 if compact_layout else 40,
+            24 if compact_layout else 35,
+            18 if compact_layout else 40,
+            24 if compact_layout else 35,
+        )
+
+        self.clear_layout(self.categories_lists_layout)
+
+        if compact_layout:
+            self.categories_lists_layout.addWidget(self.income_categories_panel, 0, 0)
+            self.categories_lists_layout.addWidget(self.expense_categories_panel, 1, 0)
+            self.categories_lists_layout.setColumnStretch(0, 1)
+            return
+
+        self.categories_lists_layout.addWidget(self.income_categories_panel, 0, 0)
+        self.categories_lists_layout.addWidget(self.expense_categories_panel, 0, 1)
+        self.categories_lists_layout.setColumnStretch(0, 1)
+        self.categories_lists_layout.setColumnStretch(1, 1)
 
     def create_sidebar(self):
         sidebar = QFrame()
@@ -345,6 +388,133 @@ class MainWindow(QMainWindow):
         layout.addStretch()
 
         return page
+
+    def create_categories_page(self):
+        page = QFrame()
+        page.setObjectName("content")
+
+        layout = QVBoxLayout(page)
+        self.categories_content_layout = layout
+        layout.setContentsMargins(40, 35, 40, 35)
+        layout.setSpacing(0)
+
+        title = QLabel("Categorias")
+        title.setObjectName("pageTitle")
+        title.setMinimumHeight(40)
+        title.setWordWrap(True)
+
+        subtitle = QLabel("Organize suas transações em categorias.")
+        subtitle.setObjectName("pageSubtitle")
+        subtitle.setMinimumHeight(24)
+        subtitle.setWordWrap(True)
+
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(28)
+
+        form_frame = QFrame()
+        form_frame.setObjectName("filtersFrame")
+
+        form_layout = QGridLayout(form_frame)
+        form_layout.setContentsMargins(18, 14, 18, 14)
+        form_layout.setHorizontalSpacing(12)
+        form_layout.setVerticalSpacing(12)
+
+        category_name_input = QLineEdit()
+        category_name_input.setObjectName("searchInput")
+        category_name_input.setPlaceholderText("Nome da categoria")
+        category_name_input.setFixedHeight(40)
+
+        category_type_input = QComboBox()
+        category_type_input.setObjectName("filterCombo")
+        category_type_input.setFixedHeight(40)
+        category_type_input.addItems(["Despesa", "Receita"])
+
+        add_category_button = QPushButton("Adicionar")
+        add_category_button.setObjectName("primaryButton")
+        add_category_button.setFixedHeight(40)
+        add_category_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        add_category_button.clicked.connect(self.add_category_from_form)
+
+        remove_category_button = QPushButton("Remover selecionada")
+        remove_category_button.setObjectName("dangerButton")
+        remove_category_button.setFixedHeight(40)
+        remove_category_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        remove_category_button.clicked.connect(self.remove_selected_category)
+
+        category_status_label = QLabel("")
+        category_status_label.setObjectName("filtersStatus")
+        category_status_label.setFixedHeight(40)
+
+        self.category_name_input = category_name_input
+        self.category_type_input = category_type_input
+        self.category_status_label = category_status_label
+        self.remove_category_button = remove_category_button
+
+        form_layout.addWidget(category_name_input, 0, 0)
+        form_layout.addWidget(category_type_input, 0, 1)
+        form_layout.addWidget(add_category_button, 0, 2)
+        form_layout.addWidget(remove_category_button, 1, 0)
+        form_layout.addWidget(category_status_label, 1, 1, 1, 2)
+        form_layout.setColumnStretch(0, 2)
+        form_layout.setColumnStretch(1, 1)
+        form_layout.setColumnStretch(2, 1)
+
+        layout.addWidget(form_frame)
+        layout.addSpacing(20)
+
+        self.categories_lists_layout = QGridLayout()
+        self.categories_lists_layout.setHorizontalSpacing(18)
+        self.categories_lists_layout.setVerticalSpacing(18)
+
+        self.income_categories_list = QListWidget()
+        self.income_categories_list.setObjectName("categoriesList")
+        self.income_categories_list.itemSelectionChanged.connect(
+            self.update_remove_category_button_state
+        )
+
+        self.expense_categories_list = QListWidget()
+        self.expense_categories_list.setObjectName("categoriesList")
+        self.expense_categories_list.itemSelectionChanged.connect(
+            self.update_remove_category_button_state
+        )
+
+        self.income_categories_panel = self.create_category_panel(
+            "Receitas",
+            self.income_categories_list,
+        )
+        self.expense_categories_panel = self.create_category_panel(
+            "Despesas",
+            self.expense_categories_list,
+        )
+
+        layout.addLayout(self.categories_lists_layout)
+        layout.addStretch()
+
+        category_name_input.returnPressed.connect(self.add_category_from_form)
+
+        self.populate_categories_lists()
+        self.update_remove_category_button_state()
+        self.update_categories_layout()
+
+        return page
+
+    def create_category_panel(self, title_text, categories_list):
+        panel = QFrame()
+        panel.setObjectName("dashboardPanel")
+        panel.setMinimumHeight(280)
+
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(22, 20, 22, 20)
+        layout.setSpacing(12)
+
+        title = QLabel(title_text)
+        title.setObjectName("panelTitle")
+
+        layout.addWidget(title)
+        layout.addWidget(categories_list, 1)
+
+        return panel
 
     def change_page(self, index, clicked_button):
         self.pages.setCurrentIndex(index)
@@ -595,16 +765,8 @@ class MainWindow(QMainWindow):
         category_filter = QComboBox()
         category_filter.setObjectName("filterCombo")
         category_filter.setFixedHeight(40)
-        category_filter.addItems([
-            "Todas as categorias",
-            "Alimentação",
-            "Transporte",
-            "Lazer",
-            "Moradia",
-            "Saúde",
-            "Salário",
-            "Outros",
-        ])
+        category_filter.addItem("Todas as categorias")
+        category_filter.addItems(self.get_all_categories())
         category_filter.currentTextChanged.connect(self.apply_transaction_filters)
 
         clear_filters_button = QPushButton("Limpar filtros")
@@ -714,6 +876,122 @@ class MainWindow(QMainWindow):
 
         return page
 
+    def add_category_from_form(self):
+        category_name = self.category_name_input.text().strip()
+        category_type = self.category_type_input.currentText()
+
+        if not category_name:
+            self.category_status_label.setText("Digite um nome para a categoria.")
+            return
+
+        if self.add_category(category_type, category_name):
+            self.category_name_input.clear()
+            self.category_status_label.setText("Categoria adicionada.")
+            return
+
+        self.category_status_label.setText("Essa categoria já existe.")
+
+    def add_category(self, category_type, category_name):
+        categories = self.get_categories(category_type)
+
+        if category_name.lower() in [category.lower() for category in categories]:
+            return False
+
+        categories.append(category_name)
+        categories.sort(key=str.lower)
+        self.refresh_category_views()
+
+        return True
+
+    def remove_selected_category(self):
+        selected_item = self.get_selected_category_item()
+
+        if selected_item is None:
+            return
+
+        category_type = selected_item.data(Qt.ItemDataRole.UserRole)
+        category_name = selected_item.text()
+
+        if category_name == "Outros":
+            return
+
+        self.categories[category_type].remove(category_name)
+
+        for transaction in self.transactions:
+            if transaction["category"] == category_name:
+                transaction["category"] = "Outros"
+
+        self.category_status_label.setText("Categoria removida.")
+        self.refresh_category_views()
+        self.apply_transaction_filters()
+
+    def get_selected_category_item(self):
+        selected_items = (
+            self.income_categories_list.selectedItems()
+            + self.expense_categories_list.selectedItems()
+        )
+
+        if not selected_items:
+            return None
+
+        return selected_items[0]
+
+    def update_remove_category_button_state(self):
+        selected_item = self.get_selected_category_item()
+        can_remove = (
+            selected_item is not None
+            and selected_item.text() != "Outros"
+        )
+        self.remove_category_button.setEnabled(can_remove)
+
+    def refresh_category_views(self):
+        self.populate_categories_lists()
+        self.populate_category_filter()
+
+    def populate_categories_lists(self):
+        self.income_categories_list.clear()
+        self.expense_categories_list.clear()
+
+        for category_type, categories_list in [
+            ("Receita", self.income_categories_list),
+            ("Despesa", self.expense_categories_list),
+        ]:
+            for category in self.get_categories(category_type):
+                item = QListWidgetItem(category)
+                item.setData(Qt.ItemDataRole.UserRole, category_type)
+                categories_list.addItem(item)
+
+        self.update_remove_category_button_state()
+
+    def populate_category_filter(self):
+        if not hasattr(self, "transaction_category_filter"):
+            return
+
+        current_category = self.transaction_category_filter.currentText()
+        all_categories = self.get_all_categories()
+
+        self.transaction_category_filter.blockSignals(True)
+        self.transaction_category_filter.clear()
+        self.transaction_category_filter.addItem("Todas as categorias")
+        self.transaction_category_filter.addItems(all_categories)
+
+        if current_category in all_categories:
+            self.transaction_category_filter.setCurrentText(current_category)
+
+        self.transaction_category_filter.blockSignals(False)
+
+    def get_categories(self, category_type):
+        return self.categories.get(category_type, [])
+
+    def get_all_categories(self):
+        all_categories = []
+
+        for category in self.get_categories("Despesa") + self.get_categories("Receita"):
+            if category not in all_categories:
+                all_categories.append(category)
+
+        return all_categories
+
     def clear_transaction_filters(self):
         self.transaction_search_input.clear()
         self.transaction_type_filter.setCurrentIndex(0)
@@ -743,21 +1021,19 @@ class MainWindow(QMainWindow):
         category_input = QComboBox()
         category_input.setObjectName("filterCombo")
         category_input.setFixedHeight(40)
-        category_input.addItems([
-            "Alimentação",
-            "Transporte",
-            "Lazer",
-            "Moradia",
-            "Saúde",
-            "Salário",
-            "Outros",
-        ])
 
         type_input = QComboBox()
         type_input.setObjectName("filterCombo")
         type_input.setFixedHeight(40)
         type_input.addItems(["Receita", "Despesa"])
         type_input.setCurrentText(default_type)
+
+        def update_dialog_categories():
+            category_input.clear()
+            category_input.addItems(self.get_categories(type_input.currentText()))
+
+        type_input.currentTextChanged.connect(update_dialog_categories)
+        update_dialog_categories()
 
         date_input = QDateEdit()
         date_input.setObjectName("dateInput")
